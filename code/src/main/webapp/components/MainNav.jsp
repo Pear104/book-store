@@ -6,8 +6,8 @@
 		<c:if test="${sessionScope.usersession.id != null}">
 			<div class="flex items-center gap-4">
 				<div onclick="showNotice()">
-					<i class="text-slate-500 text-lg fa-solid fa-bell relative">
-						<c:if test="${!requestScope.anyRead}">
+					<i class="text-slate-500 text-lg fa-solid fa-bell relative cursor-pointer">
+						<c:if test="${requestScope.anyRead}">
 							<i class="absolute text-[10px] top-0 right-0 text-red-500 fa-solid fa-circle"></i>
 						</c:if>
 					</i>

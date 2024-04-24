@@ -37,7 +37,7 @@ public class OrderQuery {
     }
 
     public @Nullable
-    SearchParam getSearch() {
+    SearchParam getSearchBy() {
         return search;
     }
 
@@ -64,11 +64,11 @@ public class OrderQuery {
         return limit;
     }
 
-    public int getStartId() {
+    public int getStartRow() {
         return (page - 1) * limit + 1;
     }
 
-    public int getEndId() {
+    public int getEndRow() {
         return page * limit;
     }
 

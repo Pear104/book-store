@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import models.order.OrderQuery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,22 +16,50 @@ import utils.DBUtils;
 
 public class AuthorDAO {
 
+	public static int countAuthors(@NotNull AuthorQuery query) {
+		int total = 0;
+		try {
+			Connection con = DBUtils.getConnection();
+			String sql = "SELECT count(1) FROM [author] WHERE 1=1";
+			if (query.getKeyword() != null)
+				sql += " AND [" + query.getSearchBy() + "] LIKE ? ";
+
+			PreparedStatement stmt = con.prepareStatement(sql);
+			if (query.getKeyword() != null)
+				stmt.setString(1, "%" + query.getKeyword() + "%");
+
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next())
+				total = rs.getInt(1);
+
+			con.close();
+		} catch (SQLException ex) {
+			System.out.println("Failed to count authors. Details:" + ex.getMessage());
+			ex.printStackTrace();
+		}
+		return total;
+	}
+
 	public static @NotNull List<AuthorDTO> getAuthors(@NotNull AuthorQuery query) {
 		List<AuthorDTO> list = new ArrayList<>();
 		try {
 			Connection con = DBUtils.getConnection();
-			String sql = "select * from [author] where [author_id] >= ? and [author_id] <= ?";
-			if (query.getSearchBy() != null) {
-				sql += " and [" + query.getSearchBy() + "] like ?";
-			}
-			if (query.getSortBy() != null) {
-				sql += " order by [" + query.getSortBy() + "] " + query.getSortOrder();
-			}
+			String sql = "SELECT * FROM (" +
+					"  SELECT *, ROW_NUMBER() OVER (" +
+					"     ORDER BY [" + query.getSortBy() + "] " + query.getSortOrder() +
+					"  ) AS [row_num] FROM [author] WHERE 1=1";
+			if (query.getKeyword() != null)
+				sql += " AND [" + query.getSearchBy() + "] LIKE ? ";
+			sql +=  ") AS [num_tb]" +
+					"WHERE [row_num] >= ? AND [row_num] <= ?";
 			PreparedStatement stmt = con.prepareStatement(sql);
-			stmt.setInt(1, query.getStartId());
-			stmt.setInt(2, query.getEndId());
 			if (query.getKeyword() != null) {
-				stmt.setString(3, "%" + query.getKeyword() + "%");
+				stmt.setString(1, "%" + query.getKeyword() + "%");
+				stmt.setInt(2, query.getStartRow());
+				stmt.setInt(3, query.getEndRow());
+			} else {
+				stmt.setInt(1, query.getStartRow());
+				stmt.setInt(2, query.getEndRow());
 			}
 			ResultSet rs = stmt.executeQuery();
 			while (rs != null && rs.next()) {
@@ -46,11 +75,11 @@ public class AuthorDAO {
 		return list;
 	}
 	
-	public static @NotNull List<AuthorDTO> getAuthors() {
+	public static @NotNull List<AuthorDTO> getAuthorIdNames() {
 		List<AuthorDTO> list = new ArrayList<>();
 		try {
 			Connection con = DBUtils.getConnection();
-			String sql = "select * from [author] order by name asc";
+			String sql = "select [author_id], [name] from [author] order by [name] asc";
 			PreparedStatement stmt = con.prepareStatement(sql);
 			ResultSet rs = stmt.executeQuery();
 			while (rs != null && rs.next()) {
@@ -58,33 +87,7 @@ public class AuthorDAO {
 				String name = rs.getString("name");
 				list.add(new AuthorDTO(id, name));
 			}
-		} catch (SQLException ex) {
-			System.out.println("Failed to get authors. Details:" + ex.getMessage());
-			ex.printStackTrace();
-		}
-		return list;
-	}
-
-	public static @NotNull List<AuthorDTO> getAuthorsTest(@NotNull AuthorQuery query) {
-		List<AuthorDTO> list = new ArrayList<>();
-		try {
-			Connection con = DBUtils.getConnection();
-			String sql = "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY " + query.getSortBy() + " "
-					+ query.getSortOrder()
-					+ ") AS row_num FROM [author]) as num_tb WHERE row_num >= ? AND row_num <= ?";
-
-			PreparedStatement stmt = con.prepareStatement(sql);
-
-			stmt.setInt(1, query.getStartId());
-			stmt.setInt(2, query.getEndId());
-			ResultSet rs = stmt.executeQuery();
-
-			while (rs != null && rs.next()) {
-				int id = rs.getInt("author_id");
-				String name = rs.getString("name");
-				list.add(new AuthorDTO(id, name));
-			}
-
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get authors. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -124,6 +127,7 @@ public class AuthorDAO {
 					result = rs.getInt(1);
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in adding author. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -141,6 +145,7 @@ public class AuthorDAO {
 			stm.setInt(2, author.getId());
 			stm.executeUpdate();
 			result = author.getId();
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in updating author. Details:" + ex.getMessage());
 			ex.printStackTrace();

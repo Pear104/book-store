@@ -3,14 +3,12 @@ package controllers;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
 import models.SortOrder;
 import models.category.CategoryDAO;
 import models.custom.pagination.PaginationDAO;
@@ -25,104 +23,121 @@ import models.user.UserDTO;
 @WebServlet(name = "SearchProducts", urlPatterns = { "/search" })
 public class SearchProductController extends HttpServlet {
 
-	protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		response.setContentType("text/html;charset=UTF-8");
-		HttpSession session = request.getSession();
-		UserDTO user = (UserDTO) session.getAttribute("usersession");
-		boolean anyRead = false;
-		if (user != null) {
-			List<NotificationDTO> notifications = NotificationDAO.getNotificationsOfUser(user.getId(), Duration.ofDays(30));
-			request.setAttribute("notifications", notifications);			
-			anyRead = notifications.stream()
-				    .anyMatch(NotificationDTO::isRead);
-		}
-		request.setAttribute("anyRead", !anyRead);
-		
-		String keyword = request.getParameter("keyword");
-		String search = request.getParameter("search");
-		String sortOrder = request.getParameter("order");
-		String sortBy = request.getParameter("sort");
-		String categoryIdStr = request.getParameter("category");
-		Integer categoryId = null;
-		int page;
-		try {
-			page = Integer.parseInt(request.getParameter("page"));
-		} catch (NumberFormatException e) {
-			page = 1; // Default to page 1 if parsing fails
-		}
+  protected void processRequest(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) throws ServletException, IOException {
+    response.setContentType("text/html;charset=UTF-8");
+    ControllerHelper.processNotification(request);
 
-		int limit = 30;
-		
+    String keyword = request.getParameter("keyword");
+    String search = request.getParameter("search");
+    String sortOrder = request.getParameter("order");
+    String sortBy = request.getParameter("sort");
+    String categoryIdStr = request.getParameter("category");
+    Integer categoryId = null;
+    int page;
+    try {
+      page = Integer.parseInt(request.getParameter("page"));
+    } catch (NumberFormatException e) {
+      page = 1; // Default to page 1 if parsing fails
+    }
 
-		ProductQuery.SearchParam searchParam = ProductQuery.SearchParam.NAME; // Default search parameter
-		if (search != null) {
-			try {
-				searchParam = ProductQuery.SearchParam.valueOf(search.toUpperCase());
-			} catch (IllegalArgumentException e) {
-				request.setAttribute("error", e.getMessage());
-				request.getRequestDispatcher("/pages/Home.jsp").forward(request, response);
-			}
-		}
+    int limit = 30;
 
-		ProductQuery.SortParam sortParam = ProductQuery.SortParam.PRICE; // Default sorting parameter
-		if (sortBy != null) {
-			try {
-				sortParam = ProductQuery.SortParam.valueOf(sortBy.toUpperCase());
-			} catch (IllegalArgumentException e) {
-				request.setAttribute("error", e.getMessage());
-				request.getRequestDispatcher("/pages/Home.jsp").forward(request, response);
-			}
-		}
+    ProductQuery.SearchParam searchParam = ProductQuery.SearchParam.NAME; // Default search parameter
+    if (search != null) {
+      try {
+        searchParam = ProductQuery.SearchParam.valueOf(search.toUpperCase());
+      } catch (IllegalArgumentException e) {
+        request.setAttribute("error", e.getMessage());
+        request
+          .getRequestDispatcher("/pages/home/Home.jsp")
+          .forward(request, response);
+      }
+    }
 
-		SortOrder sortOrderEnum = "DESC".equalsIgnoreCase(sortOrder) ? SortOrder.DESC : SortOrder.ASC;
-		
-		ProductQuery query = new ProductQuery(searchParam, keyword, sortParam, sortOrderEnum, page, limit);
+    ProductQuery.SortParam sortParam = ProductQuery.SortParam.PRICE; // Default sorting parameter
+    if (sortBy != null) {
+      try {
+        sortParam = ProductQuery.SortParam.valueOf(sortBy.toUpperCase());
+      } catch (IllegalArgumentException e) {
+        request.setAttribute("error", e.getMessage());
+        request
+          .getRequestDispatcher("/pages/home/Home.jsp")
+          .forward(request, response);
+      }
+    }
 
-		request.setAttribute("limit", limit);
-		request.setAttribute("page", page);
-		request.setAttribute("categories", CategoryDAO.getCategories());
-		if (categoryIdStr != null) {
-			if (!categoryIdStr.isEmpty()) {
-				categoryId = Integer.parseInt(categoryIdStr);
-				request.setAttribute("products", ProductDAO.getProductsByCategoryId(categoryId,query));
-				PaginationDTO pagination = (PaginationDAO.getProductsPagination(categoryId,query));
-				request.setAttribute("category", CategoryDAO.getCategory(categoryId));
-				request.setAttribute("pagination", pagination);
-				request.getRequestDispatcher("/pages/SearchProduct.jsp").forward(request, response);
-				return;
-			}
-		} else {
-			request.setAttribute("products", ProductDAO.getProducts(query));
-			PaginationDTO pagination = (PaginationDAO.getProductsPagination(query));
-			request.setAttribute("keyword", keyword);
-			request.setAttribute("pagination", pagination);
-			request.getRequestDispatcher("/pages/SearchProduct.jsp").forward(request, response);
-			return;
-		}
+    SortOrder sortOrderEnum = "DESC".equalsIgnoreCase(sortOrder)
+      ? SortOrder.DESC
+      : SortOrder.ASC;
 
+    ProductQuery query = new ProductQuery(
+      searchParam,
+      keyword,
+      sortParam,
+      sortOrderEnum,
+      page,
+      limit
+    );
 
-		List<ProductDTO> products = ProductDAO.getProducts(query);
+    request.setAttribute("limit", limit);
+    request.setAttribute("page", page);
+    request.setAttribute("categories", CategoryDAO.getCategories());
+    if (categoryIdStr != null) {
+      if (!categoryIdStr.isEmpty()) {
+        categoryId = Integer.parseInt(categoryIdStr);
+        request.setAttribute(
+          "products",
+          ProductDAO.getProductsByCategoryId(categoryId, query)
+        );
+        PaginationDTO pagination =
+          (PaginationDAO.getProductsPagination(categoryId, query));
+        request.setAttribute("category", CategoryDAO.getCategory(categoryId));
+        request.setAttribute("pagination", pagination);
+        request
+          .getRequestDispatcher("/pages/product/SearchProduct.jsp")
+          .forward(request, response);
+        return;
+      }
+    } else {
+      request.setAttribute("products", ProductDAO.getProducts(query));
+      PaginationDTO pagination = (PaginationDAO.getProductsPagination(query));
+      request.setAttribute("keyword", keyword);
+      request.setAttribute("pagination", pagination);
+      request
+        .getRequestDispatcher("/pages/product/SearchProduct.jsp")
+        .forward(request, response);
+      return;
+    }
 
-		request.setAttribute("products", products);
-		request.getRequestDispatcher("/pages/SearchProduct.jsp").forward(request, response);
-	}
+    List<ProductDTO> products = ProductDAO.getProducts(query);
 
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		processRequest(request, response);
-	}
+    request.setAttribute("products", products);
+    request
+      .getRequestDispatcher("/pages/product/SearchProduct.jsp")
+      .forward(request, response);
+  }
 
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		processRequest(request, response);
-	}
+  @Override
+  protected void doGet(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) throws ServletException, IOException {
+    processRequest(request, response);
+  }
 
-	@Override
-	public String getServletInfo() {
-		return "Short description";
-	}// </editor-fold>
+  @Override
+  protected void doPost(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) throws ServletException, IOException {
+    processRequest(request, response);
+  }
 
+  @Override
+  public String getServletInfo() {
+    return "Short description";
+  } // </editor-fold>
 }

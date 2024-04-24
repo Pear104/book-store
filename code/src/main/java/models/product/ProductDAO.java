@@ -60,8 +60,10 @@ public class ProductDAO {
 				sql += " AND [" + query.getSearchBy() + "] LIKE ? ";
 			if (categoryId != null)
 				sql += " AND [category_id] = " + categoryId;
-			sql +=  ") AS [num_tb]" +
+			sql +=  ") AS [num_tb] " +
 					"WHERE [row_num] >= ? AND [row_num] <= ?";
+			System.out.println(sql);
+			long time = System.currentTimeMillis();
 
 			PreparedStatement stmt = con.prepareStatement(sql);
 			if (query.getKeyword() != null) {
@@ -100,6 +102,7 @@ public class ProductDAO {
 				}
 			}
 			con.close();
+			System.out.println("Took " + (System.currentTimeMillis() - time) + "ms");
 		} catch (SQLException ex) {
 			System.out.println("Failed to get products. Details:" + ex.getMessage());
 			ex.printStackTrace();

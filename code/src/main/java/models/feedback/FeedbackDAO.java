@@ -22,48 +22,38 @@ public class FeedbackDAO {
 		List<FeedbackDTO> list = new ArrayList<>();
 		try {
 			Connection con = DBUtils.getConnection();
-			String sql = "SELECT * FROM [feedback] WHERE [product_id] = ? and [feedback_id] >= ? and [feedback_id] <= ?";
-			if (query.getSearchBy() != null)
-				sql += " and [" + query.getSearchBy() + "] like ?";
-			if (query.getSortBy() != null)
-				sql += " order by [" + query.getSortBy() + "] " + query.getSortOrder();
+			String sql = "SELECT * FROM (" +
+					"  SELECT *, ROW_NUMBER() OVER (" +
+					"     ORDER BY [" + query.getSortBy() + "] " + query.getSortOrder() +
+					"  ) AS [row_num] FROM [feedback] WHERE 1=1";
+			if (query.getKeyword() != null)
+				sql += " AND [" + query.getSearchBy() + "] LIKE ? ";
+			sql += " AND [product_id] = " + productId;
+			sql +=  ") AS [num_tb] " +
+					"WHERE [row_num] >= ? AND [row_num] <= ?";
 			PreparedStatement stm = con.prepareStatement(sql);
-			stm.setInt(1, productId);
-			stm.setInt(2, query.getStartId());
-			stm.setInt(3, query.getEndId());
-			ResultSet rs = stm.executeQuery();
-			while (rs != null && rs.next()) {
-				FeedbackDTO feedback = new FeedbackDTO(rs.getInt("feedback_id"), rs.getInt("user_id"),
-						rs.getInt("product_id"), rs.getInt("rating"), rs.getString("content"),
-						rs.getDate("created_at"));
-				list.add(feedback);
+			if (query.getKeyword() != null) {
+				stm.setString(1, "%" + query.getSearchBy() + "%");
+				stm.setInt(2, query.getStartRow());
+				stm.setInt(3, query.getEndRow());
+			} else {
+				stm.setInt(1, query.getStartRow());
+				stm.setInt(2, query.getEndRow());
 			}
-		} catch (SQLException ex) {
-			System.out.println("Error in getting feedbacks of product. Details: " + ex.getMessage());
-			ex.printStackTrace();
-		}
-		return list;
-	}
-
-	public static @NotNull List<FeedbackDTO> getFeedbacksOfProductTest(int productId, @NotNull FeedbackQuery query) {
-		List<FeedbackDTO> list = new ArrayList<>();
-		try {
-			Connection con = DBUtils.getConnection();
-			String sql = "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY " + query.getSortBy() + " "
-					+ query.getSortOrder()
-					+ ") AS row_num FROM [feedback] WHERE product_id = ?) as num_tb WHERE row_num >= ? AND row_num <= ?";
-			PreparedStatement stm = con.prepareStatement(sql);
-			stm.setInt(1, productId);
-			stm.setInt(2, query.getStartId());
-			stm.setInt(3, query.getEndId());
 			ResultSet rs = stm.executeQuery();
 			while (rs != null && rs.next()) {
 				UserDTO user = UserDAO.getUser(rs.getInt("user_id"));
-				FeedbackDTO feedback = new FeedbackDTO(rs.getInt("feedback_id"), rs.getInt("user_id"),
-						rs.getInt("product_id"), rs.getInt("rating"), rs.getString("content"), rs.getDate("created_at"),
+				FeedbackDTO feedback = new FeedbackDTO(
+						rs.getInt("feedback_id"),
+						rs.getInt("user_id"),
+						rs.getInt("product_id"),
+						rs.getInt("rating"),
+						rs.getString("content"),
+						rs.getDate("created_at"),
 						user);
 				list.add(feedback);
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in getting feedbacks of product. Details: " + ex.getMessage());
 			ex.printStackTrace();
@@ -80,11 +70,12 @@ public class FeedbackDAO {
 			stm.setInt(1, userId);
 			stm.setInt(2, productId);
 			ResultSet rs = stm.executeQuery();
-			while (rs != null && rs.next()) {
+			if (rs != null && rs.next()) {
 				feedback = new FeedbackDTO(rs.getInt("feedback_id"), rs.getInt("user_id"),
 						rs.getInt("product_id"), rs.getInt("rating"), rs.getString("content"), rs.getDate("created_at"));
 				return feedback;
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in getting feedbacks of product. Details: " + ex.getMessage());
 			ex.printStackTrace();
@@ -109,6 +100,7 @@ public class FeedbackDAO {
 				if (rs.next())
 					result = rs.getInt(1);
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in creating feedback. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -126,6 +118,7 @@ public class FeedbackDAO {
 			stm.setString(2, feedback.getContent());
 			stm.setInt(3, feedback.getFeedbackId());
 			ok = stm.executeUpdate() > 0;
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in updating feedback. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -141,6 +134,7 @@ public class FeedbackDAO {
 			PreparedStatement stm = con.prepareStatement(sql);
 			stm.setInt(1, feedbackId);
 			ok = stm.executeUpdate() > 0;
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Error in deleting feedback. Details:" + ex.getMessage());
 			ex.printStackTrace();

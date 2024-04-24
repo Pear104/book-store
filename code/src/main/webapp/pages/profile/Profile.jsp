@@ -45,7 +45,6 @@
 	                            placeholder="Change password"
 	                            minlength="1"
 	                            maxlength="150"
-	                            required
 	                            />
 	                    </div>
 			        	<div class="flex flex-col m-4">
@@ -58,7 +57,6 @@
 	                            placeholder="Confirm new password"
 	                            minlength="1"
 	                            maxlength="150"
-	                            required
 	                            />
 	                    </div>
 						<div class="flex flex-col m-4">
@@ -94,10 +92,10 @@
 	                            required
 	                            />
 	                    </div>
-					    <button type="submit" value="">Save</button>
+					    <button type="submit" value="" class="ml-4 rounded-md px-4 py-2 font-bold text-white bg-blue-600">Save</button>
 					</form>
 		        	<br/>
-					<a href="/" style="text-decoration: none; padding: 10px; background-color: blue; color: white; border-radius: 5px;">Back to Home</a>
+					<a href="/" class="ml-4 no-underline px-4 py-2 font-bold bg-blue-600 text-white rounded-md">Back to Home</a>
 					<div class="col-span-7 m-4">
 	        			<div class="text-xl font-bold"></div>
 						</div>
@@ -107,9 +105,7 @@
 	        </div>
 	        <div class="col-span-3"></div>
 		</div>
-        
-        
-
+        <%@include file="../../components/script/Script.jsp" %>
     </body>
 </html>
 

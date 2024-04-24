@@ -40,6 +40,7 @@ public class NotificationDAO {
 					list.add(noti);
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get notifications of user. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -64,6 +65,7 @@ public class NotificationDAO {
 				if (rs.next())
 					result = rs.getInt(1);
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to add notification. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -80,6 +82,7 @@ public class NotificationDAO {
 			stmt.setBoolean(1, true);
 			stmt.setInt(2, notificationId);
 			result = stmt.executeUpdate() > 0;
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to mark notification. Details:" + ex.getMessage());
 			ex.printStackTrace();

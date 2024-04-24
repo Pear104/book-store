@@ -56,11 +56,11 @@ public class FeedbackQuery {
 		return limit;
 	}
 
-	public int getStartId() {
+	public int getStartRow() {
 		return (page - 1) * limit + 1;
 	}
 
-	public int getEndId() {
+	public int getEndRow() {
 		return page * limit;
 	}
 

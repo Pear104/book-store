@@ -18,7 +18,7 @@ public class LoginController extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		request.getRequestDispatcher("/pages/Login.jsp").forward(request, response);
+		request.getRequestDispatcher("/pages/login/Login.jsp").forward(request, response);
 	}
 
 	@Override
@@ -52,7 +52,7 @@ public class LoginController extends HttpServlet {
 			System.out.printf("Login success: %s (#%s)%n", user.getName(), user.getId());
 		} catch (IllegalArgumentException e) {
 			request.setAttribute("error", e.getMessage());
-			request.getRequestDispatcher("/pages/Login.jsp").forward(request, response);
+			request.getRequestDispatcher("/pages/login/Login.jsp").forward(request, response);
 		}
 	}
 }

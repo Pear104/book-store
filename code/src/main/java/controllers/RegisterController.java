@@ -20,7 +20,7 @@ public class RegisterController extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		request.getRequestDispatcher("/pages/Register.jsp").forward(request, response);
+		request.getRequestDispatcher("/pages/register/Register.jsp").forward(request, response);
 	}
 
 	@SuppressWarnings("DataFlowIssue")
@@ -78,7 +78,7 @@ public class RegisterController extends HttpServlet {
 		} catch (IllegalArgumentException e) {
 			request.setAttribute("error", e.getMessage());
 		} finally {
-			request.getRequestDispatcher("/pages/Register.jsp").forward(request, response);
+			request.getRequestDispatcher("/pages/register/Register.jsp").forward(request, response);
 		}
 	}
 }

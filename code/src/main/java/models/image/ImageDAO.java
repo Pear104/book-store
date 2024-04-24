@@ -29,20 +29,12 @@ public class ImageDAO {
 			while (rs.next()) {
 				int imageId = rs.getInt("image_id");
 				String url = rs.getString("url");
-
-				ImageDTO image = new ImageDTO(imageId, productId, url);
+				Date createdAt = rs.getDate("created_at");
+				ImageDTO image = new ImageDTO(imageId, productId, url, createdAt);
 				list.add(image);
 			}
 
-			if (rs != null) {
-				while (rs.next()) {
-					int imageId = rs.getInt("image_id");
-					String url = rs.getString("url");
-					Date createdAt = rs.getDate("created_at");
-					ImageDTO image = new ImageDTO(imageId, productId, url);
-					list.add(image);
-				}
-			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get images of product. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -66,6 +58,7 @@ public class ImageDAO {
 				}
 			}
 
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to create image. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -81,6 +74,7 @@ public class ImageDAO {
 			PreparedStatement stmt = con.prepareStatement(sql);
 			stmt.setInt(1, imageId);
 			result = stmt.executeUpdate() > 0;
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to delete image. Details:" + ex.getMessage());
 			ex.printStackTrace();

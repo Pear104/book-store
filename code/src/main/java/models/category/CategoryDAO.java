@@ -53,6 +53,7 @@ public class CategoryDAO {
 					category = new CategoryDTO(categoryId, name);
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -90,6 +91,7 @@ public class CategoryDAO {
 			stmt.setInt(2, category.getId());
 			stmt.executeUpdate();
 			result = category.getId();
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to update category. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -105,6 +107,7 @@ public class CategoryDAO {
 			PreparedStatement stmt = con.prepareStatement(sql);
 			stmt.setInt(1, categoryId);
 			result = stmt.executeUpdate() > 0;
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to delete category. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -132,6 +135,7 @@ public class CategoryDAO {
 
 			// If at least one record was deleted, set result to true
 			result = deletedRecords > 0;
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to delete category. Details:" + ex.getMessage());
 			ex.printStackTrace();

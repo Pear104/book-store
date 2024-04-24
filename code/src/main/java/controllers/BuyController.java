@@ -17,6 +17,7 @@ import models.order.OrderDTO;
 import models.order.Status;
 import models.orderdetail.OrderDetailDTO;
 import models.user.UserDTO;
+import utils.ServletUtils;
 
 @WebServlet("/buy")
 public class BuyController extends HttpServlet {
@@ -26,6 +27,7 @@ public class BuyController extends HttpServlet {
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		List<CartItemDTO> cartItemList = (List<CartItemDTO>) session.getAttribute("shopcart");
+		if (cartItemList == null) return;
 		List<OrderDetailDTO> orderDetails = new ArrayList<>();
 
 		for (CartItemDTO cartItem : cartItemList) {
@@ -34,13 +36,16 @@ public class BuyController extends HttpServlet {
 		}
 
 		UserDTO user = (UserDTO) session.getAttribute("usersession");
+		if (user == null) return;
 		OrderDTO orders = new OrderDTO(user.getId(), Status.PENDING, orderDetails);
-		OrderDAO.createOrder(orders);
+		if (OrderDAO.createOrder(orders) == null) {
+			request.setAttribute("error", "Lỗi tạo order!");
+			request.getRequestDispatcher("/pages/order/Order.jsp").forward(request, response);
+			return;
+		}
 		cartItemList = null;
 		session.setAttribute("shopcart", cartItemList);
-		System.out.println("Chay xong buy roi do");
 		response.sendRedirect("./order");
-		// TODO Auto-generated method stub
 	}
 
 	public BuyController() {

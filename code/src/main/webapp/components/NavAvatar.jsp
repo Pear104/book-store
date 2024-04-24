@@ -15,6 +15,11 @@
 
             <!-- Settings Button -->
             <a href="./order" class="bg-white block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Order</button>
+            
+            <!-- Admin Page -->
+            <c:if test="${sessionScope.usersession.role != 'USER'}">
+	            <a href="./admin" class="bg-white block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</button>
+            </c:if>
 
             <!-- Logout Button -->
             <a href="./logout" class="bg-white rounded-b-md block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>

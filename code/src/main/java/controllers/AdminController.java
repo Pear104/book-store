@@ -11,6 +11,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import models.SortOrder;
 import models.author.AuthorDAO;
@@ -31,10 +32,13 @@ import models.order.Status;
 import models.product.ProductDAO;
 import models.product.ProductDTO;
 import models.product.ProductQuery;
+import models.user.Role;
 import models.user.UserDAO;
+import models.user.UserDTO;
 import models.user.UserQuery;
 import utils.DateTimeUtils;
 import utils.RegexUtils;
+import utils.ServletUtils;
 
 @WebServlet(name = "AdminController", urlPatterns = { "/admin" })
 public class AdminController extends HttpServlet {
@@ -43,6 +47,16 @@ public class AdminController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
+		HttpSession session = request.getSession();
+		UserDTO user = (UserDTO) session.getAttribute("usersession");
+		
+		if (user == null) {
+			response.sendRedirect(ServletUtils.getBasePath(request) + "/login");
+		} else if (user.getRole() == Role.USER) {
+			response.sendRedirect(ServletUtils.getBasePath(request));
+		}
+		request.setAttribute("user", user);
+		
 		String tab = request.getParameter("tab");
 		String action = request.getParameter("action");
 		int page = 1;
@@ -69,7 +83,7 @@ public class AdminController extends HttpServlet {
 			request.setAttribute("tonKho", StatisticDAO.getTonKho());
 			request.setAttribute("mostSelledProduct", CustomDAO.getMostSelledProductsNoImage());
 			request.setAttribute("mostPotentialCustomer", CustomDAO.getMostActiveCustomer());
-			request.getRequestDispatcher("/components/admin/dashboard/Dashboard.jsp").forward(request, response);
+			request.getRequestDispatcher("/pages/admin/dashboard/Dashboard.jsp").forward(request, response);
 		} else if (tab.equals("ProductManager")) {
 			String keyword = request.getParameter("keyword");
 			String search = request.getParameter("search");
@@ -88,7 +102,7 @@ public class AdminController extends HttpServlet {
 					searchParam = ProductQuery.SearchParam.valueOf(search.toUpperCase());
 				} catch (IllegalArgumentException e) {
 					request.setAttribute("error", e.getMessage());
-					request.getRequestDispatcher("/pages/Home.jsp").forward(request, response);
+					request.getRequestDispatcher("/pages/home/Home.jsp").forward(request, response);
 				}
 			}
 
@@ -98,11 +112,11 @@ public class AdminController extends HttpServlet {
 					sortParam = ProductQuery.SortParam.valueOf(sortBy.toUpperCase());
 				} catch (IllegalArgumentException e) {
 					request.setAttribute("error", e.getMessage());
-					request.getRequestDispatcher("/pages/Home.jsp").forward(request, response);
+					request.getRequestDispatcher("/pages/home/Home.jsp").forward(request, response);
 				}
 			}
 
-			SortOrder sortOrderEnum = "DESC".equalsIgnoreCase(sortOrder) ? SortOrder.DESC : SortOrder.ASC;
+			SortOrder sortOrderEnum = "ASC".equalsIgnoreCase(sortOrder) ? SortOrder.ASC : SortOrder.DESC;
 			
 			ProductQuery productQuery = new ProductQuery(searchParam, keyword, sortParam, sortOrderEnum, page, limit);
 			
@@ -114,58 +128,62 @@ public class AdminController extends HttpServlet {
 				} catch (Exception e) {
 				}
 				ProductDTO product = ProductDAO.getProduct(productId);
-				request.setAttribute("updateProduct", product);
-				request.setAttribute("images", product.getImages().stream().map(ImageDTO::getUrl)
-                        .collect(Collectors.joining("\n")));
+				if (product != null) {
+					request.setAttribute("updateProduct", product);
+					if (product.getImages() != null)
+						request.setAttribute("images", product.getImages().stream().map(ImageDTO::getUrl)
+								.collect(Collectors.joining("\n")));
+				}
 			}
-			PaginationDTO pagination = (PaginationDAO.getProductsManagerPagination(productQuery));
 
-			request.setAttribute("products", ProductDAO.getProducts(productQuery));
+			boolean toModify = action.equals("update") || action.equals("create");
+
 			request.setAttribute("categories", CategoryDAO.getCategories());
 			request.setAttribute("action", action);
 			request.setAttribute("tab", tab);
-			request.setAttribute("pagination", pagination);
-			if (action.equals("") || action.equals("update") || action.equals("create")) {
-				request.setAttribute("authors", AuthorDAO.getAuthors());
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
-			} else if (action.equals("delete")) {
-				response.sendRedirect("./admin?tab=ProductManager");
+			if (toModify) {
+				request.setAttribute("authors", AuthorDAO.getAuthorIdNames());
+			} else {
+				request.setAttribute("products", ProductDAO.getProducts(productQuery));
+				PaginationDTO pagination = (PaginationDAO.getProductsManagerPagination(productQuery));
+				request.setAttribute("pagination", pagination);
 			}
+			request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 		} else if (tab.equals("OrderManager")) {
-			OrderQuery orderQuery = new OrderQuery(null, null, OrderQuery.SortParam.ORDER_ID, SortOrder.ASC, page,
+			OrderQuery orderQuery = new OrderQuery(null, null, OrderQuery.SortParam.ORDER_ID, SortOrder.DESC, page,
 					limit);
 			if (action == null) {
 				action = "";
 			}
 			request.setAttribute("action", action);
 			request.setAttribute("tab", tab);
-			if (action == "") {
+			if (action.isEmpty()) {
 				PaginationDTO pagination = (PaginationDAO.getOrdersPagination(orderQuery));
-				request.setAttribute("orders", OrderDAO.getOrdersTest(orderQuery));
+				request.setAttribute("orders", OrderDAO.getOrders(orderQuery));
 				request.setAttribute("pagination", pagination);
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("detail")) {
 				try {
 					orderId = Integer.parseInt(request.getParameter("orderId"));
 				} catch (Exception e) {
 				}
 				request.setAttribute("order", OrderDAO.getOrder(orderId));
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			}
 		} else if (tab.equals("CustomerManager")) {
-			UserQuery customerQuery = new UserQuery(null, null, UserQuery.SortParam.USER_ID, SortOrder.ASC, page,
+			UserQuery customerQuery = new UserQuery(null, null, UserQuery.SortParam.USER_ID, SortOrder.DESC, page,
 					limit);
 			if (action == null) {
 				action = "";
 			}
 			request.setAttribute("action", action);
 			request.setAttribute("tab", tab);
-			if (action == "") {
+			if (action.isEmpty()) {
 				PaginationDTO pagination = (PaginationDAO.getCustomersPagination(customerQuery));
 				request.setAttribute("pagination", pagination);
 				action = "";
 				request.setAttribute("customers", UserDAO.getUsers(customerQuery));
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("detail")) {
 				try {
 					userId = Integer.parseInt(request.getParameter("userId"));
@@ -173,7 +191,7 @@ public class AdminController extends HttpServlet {
 				}
 				System.out.println("userid " + userId);
 				request.setAttribute("customer", UserDAO.getUser(userId));
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			}
 		} else if (tab.equals("CategoryManager")) {
 			if (action == null) {
@@ -181,9 +199,9 @@ public class AdminController extends HttpServlet {
 			}
 			request.setAttribute("action", action);
 			request.setAttribute("tab", tab);
-			if (action == "") {
+			if (action.isEmpty()) {
 				request.setAttribute("categoryies", CategoryDAO.getCategories());
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("update")) {
 				try {
 					categoryId = Integer.parseInt(request.getParameter("categoryId"));
@@ -191,9 +209,9 @@ public class AdminController extends HttpServlet {
 				} catch (Exception e) {
 				}
 				request.setAttribute("categoryUpdate", CategoryDAO.getCategory(categoryId));
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("create")) {
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("delete")) {
 				try {
 					categoryId = Integer.parseInt(request.getParameter("categoryId"));
@@ -203,18 +221,18 @@ public class AdminController extends HttpServlet {
 				response.sendRedirect("./admin?tab=CategoryManager");
 			}
 		} else if (tab.equals("AuthorManager")) {
-			AuthorQuery authorQuery = new AuthorQuery(null, null, AuthorQuery.SortParam.AUTHOR_ID, SortOrder.ASC, page,
+			AuthorQuery authorQuery = new AuthorQuery(null, null, AuthorQuery.SortParam.AUTHOR_ID, SortOrder.DESC, page,
 					limit);
 			if (action == null) {
 				action = "";
 			}
 			request.setAttribute("action", action);
 			request.setAttribute("tab", tab);
-			if (action == "") {
+			if (action.isEmpty()) {
 				PaginationDTO pagination = (PaginationDAO.getAuthorsPagination(authorQuery));
 				request.setAttribute("pagination", pagination);
-				request.setAttribute("authors", AuthorDAO.getAuthorsTest(authorQuery));
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.setAttribute("authors", AuthorDAO.getAuthors(authorQuery));
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("detail")) {
 				try {
 					userId = Integer.parseInt(request.getParameter("userId"));
@@ -228,9 +246,9 @@ public class AdminController extends HttpServlet {
 				} catch (Exception e) {
 				}
 				request.setAttribute("authorUpdate", AuthorDAO.getAuthorById(authorId));
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("create")) {
-				request.getRequestDispatcher("/pages/Admin.jsp").forward(request, response);
+				request.getRequestDispatcher("/pages/admin/Admin.jsp").forward(request, response);
 			} else if (action.equals("delete")) {
 				try {
 					authorId = Integer.parseInt(request.getParameter("authorId"));
@@ -276,14 +294,13 @@ public class AdminController extends HttpServlet {
 		} catch (Exception e) {
 		}
 		int returnedId = 1;
-		System.out.println(description);
 		if (tab.equals("ProductManager")) {
 			if (action.equals("create")) {
 				returnedId = ProductDAO.create(new ProductDTO(-1, categoryId, name, shortDescription, description, price,
 						manufacturer, publisher, size, format, pages, remain, publishDay, new Date(System.currentTimeMillis())));
 				List<String> images = RegexUtils.getImagesLink(request.getParameter("images"));
 				for (String image:images) {
-					ImageDAO.createImage(new ImageDTO(0, returnedId, image));				
+					ImageDAO.createImage(new ImageDTO(0, returnedId, image, new Date(System.currentTimeMillis())));
 				}
 				int author1 = -1,author2 = -1,author3 = -1,author4 = -1;
 				try {
@@ -345,7 +362,7 @@ public class AdminController extends HttpServlet {
 			}
 			if (status.equals("CANCELLED")) {
 				String message = request.getParameter("message");
-				if (message.isBlank()) {
+				if (message.isEmpty()) {
 					message = "Shipper giao 3 lần đều không nghe máy";
 				}
 				System.out.println("message: "+message);
@@ -355,6 +372,18 @@ public class AdminController extends HttpServlet {
 				OrderDAO.updateOrderStatus(orderId, Status.valueOf(status));				
 			}
 			response.sendRedirect("./admin?tab=OrderManager&action=detail&orderId=" + orderId);
+			return;
+		}   else if (tab.equals("CustomerManager")) {
+			int userId = -1;
+			String role = request.getParameter("role");
+			try {
+				userId = Integer.parseInt(request.getParameter("id"));
+				UserDTO user = UserDAO.getUser(userId);
+				user.setRole(Role.valueOf(role));
+				UserDAO.update(user);
+			} catch (Exception e) {
+			}
+			response.sendRedirect("./admin?tab=CustomerManager&action=detail&userId=" + userId);
 			return;
 		}
 //        System.out.println("name " + name);

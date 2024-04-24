@@ -19,12 +19,15 @@ public class FavoriteDAO {
         List<FavoriteDTO> list = new ArrayList<>();
         try {
             Connection con = DBUtils.getConnection();
-            String sql = "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY " + query.getSortBy() + " " + query.getSortOrder() + ") AS row_num FROM [favorite] WHERE [user_id] = ?) as num_tb WHERE row_num >= ? AND row_num <= ?";
-            
+            String sql = "SELECT * FROM (" +
+                    "  SELECT *, ROW_NUMBER() OVER (" +
+                    "     ORDER BY [" + query.getSortBy() + "] " + query.getSortOrder() +
+                    "  ) AS [row_num] FROM [favorite] WHERE [user_id] = " + userId;
+            sql +=  ") AS [num_tb] " +
+                    "WHERE [row_num] >= ? AND [row_num] <= ?";
             PreparedStatement stm = con.prepareStatement(sql);
-            stm.setInt(1, userId);
-            stm.setInt(2, query.getStartId());
-            stm.setInt(3, query.getEndId());
+            stm.setInt(1, query.getStartRow());
+            stm.setInt(2, query.getEndRow());
             ResultSet rs = stm.executeQuery();
             while (rs != null && rs.next()) {
                 FavoriteDTO favorite = new FavoriteDTO(
@@ -35,6 +38,7 @@ public class FavoriteDAO {
                 favorite.setProduct(ProductDAO.getProduct(rs.getInt("product_id")));
                 list.add(favorite);
             }
+            con.close();
         } catch (SQLException ex) {
             System.out.println("Error in getting favourites. Details:" + ex.getMessage());
             ex.printStackTrace();
@@ -52,6 +56,7 @@ public class FavoriteDAO {
             stm.setInt(2, favorite.getProductId());
             stm.setDate(3, new Date(System.currentTimeMillis()));
             ok = stm.executeUpdate() > 0;
+            con.close();
         } catch (SQLException ex) {
             System.out.println("Error in adding favourite. Details:" + ex.getMessage());
             ex.printStackTrace();
@@ -68,6 +73,7 @@ public class FavoriteDAO {
             stm.setInt(1, userId);
             stm.setInt(2, productId);
             ok = stm.executeUpdate() > 0;
+            con.close();
         } catch (SQLException ex) {
             System.out.println("Error in removing favourites. Details:" + ex.getMessage());
             ex.printStackTrace();

@@ -1,7 +1,7 @@
 package models.image;
 
 import java.sql.Timestamp;
-import java.util.Date;
+import java.sql.Date;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -11,11 +11,11 @@ public class ImageDTO {
 	private final String url;
 	private final Date createdAt;
 
-	public ImageDTO(int imageId, int productId, @NotNull String url) {
+	public ImageDTO(int imageId, int productId, @NotNull String url, @NotNull Date createdAt) {
 		this.imageId = imageId;
 		this.productId = productId;
 		this.url = url;
-		this.createdAt = new java.sql.Date(new Timestamp(new Date().getTime()).getTime());
+		this.createdAt = createdAt;
 	}
 
 	public int getImageId() {

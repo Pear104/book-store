@@ -25,18 +25,18 @@ public class OrderDetailDAO {
 			stmt.setInt(1, orderId);
 			ResultSet rs = stmt.executeQuery();
 
-			if (rs != null) {
-				while (rs.next()) {
-					int id = rs.getInt("order_id");
-					int productId = rs.getInt("product_id");
-					int price = rs.getInt("price");
-					int amount = rs.getInt("amount");
-					ProductDTO productDTO = ProductDAO.getProduct(productId);
+			while (rs.next()) {
+				int id = rs.getInt("order_id");
+				int productId = rs.getInt("product_id");
+				int price = rs.getInt("price");
+				int amount = rs.getInt("amount");
+				ProductDTO productDTO = ProductDAO.getProduct(productId);
 
-					OrderDetailDTO orderDetail = new OrderDetailDTO(id, productId, price, amount, productDTO);
-					list.add(orderDetail);
-				}
+				OrderDetailDTO orderDetail = new OrderDetailDTO(id, productId, price, amount, productDTO);
+				list.add(orderDetail);
 			}
+
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get order detail. Details:" + ex.getMessage());
 			ex.printStackTrace();

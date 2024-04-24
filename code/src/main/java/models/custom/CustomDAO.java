@@ -40,6 +40,7 @@ public class CustomDAO {
 					list.add(product);
                 }
             }
+            con.close();
         } catch (SQLException ex) {
             System.out.println("Failed to get orders. Details:" + ex.getMessage());
             ex.printStackTrace();
@@ -75,6 +76,7 @@ public class CustomDAO {
 					list.add(product);
                 }
             }
+            con.close();
         } catch (SQLException ex) {
             System.out.println("Failed to get orders. Details:" + ex.getMessage());
             ex.printStackTrace();
@@ -105,6 +107,7 @@ public class CustomDAO {
 					list.add(user);
                 }
             }
+            con.close();
         } catch (SQLException ex) {
             System.out.println("Failed to get orders. Details:" + ex.getMessage());
             ex.printStackTrace();

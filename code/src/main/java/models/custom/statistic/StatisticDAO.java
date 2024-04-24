@@ -36,6 +36,7 @@ public class StatisticDAO {
 					list.add(map);
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -66,6 +67,7 @@ public class StatisticDAO {
 					list.add(map);
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -73,22 +75,23 @@ public class StatisticDAO {
 		return list;
 	}
 	
-	public static Double getTongDoanhThu() {
+	public static double getTongDoanhThu() {
 		try {
 			Connection con = DBUtils.getConnection();
 			String sql = "SELECT SUM(CAST(total_price AS DECIMAL(18, 2))) as 'tongDoanhThu' FROM [order] WHERE [order].status = 'COMPLETED';";
 			PreparedStatement stmt = con.prepareStatement(sql);
 			ResultSet rs = stmt.executeQuery();
 			if (rs != null) {
-				while (rs.next()) {
+				if (rs.next()) {
 					return rs.getDouble("tongDoanhThu");
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
 		}
-		return null;
+		return 0;
 	}
 	
 	public static Integer getTongDonHang() {
@@ -98,10 +101,11 @@ public class StatisticDAO {
 			PreparedStatement stmt = con.prepareStatement(sql);
 			ResultSet rs = stmt.executeQuery();
 			if (rs != null) {
-				while (rs.next()) {
+				if (rs.next()) {
 					return rs.getInt("tongDonHang");
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -120,10 +124,11 @@ public class StatisticDAO {
 			PreparedStatement stmt = con.prepareStatement(sql);
 			ResultSet rs = stmt.executeQuery();
 			if (rs != null) {
-				while (rs.next()) {
+				if (rs.next()) {
 					return rs.getInt("tongSanPham");
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
@@ -138,10 +143,11 @@ public class StatisticDAO {
 			PreparedStatement stmt = con.prepareStatement(sql);
 			ResultSet rs = stmt.executeQuery();
 			if (rs != null) {
-				while (rs.next()) {
+				if (rs.next()) {
 					return rs.getInt("tonKho");
 				}
 			}
+			con.close();
 		} catch (SQLException ex) {
 			System.out.println("Failed to get categories. Details:" + ex.getMessage());
 			ex.printStackTrace();
